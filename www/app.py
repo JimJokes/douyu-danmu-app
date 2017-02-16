@@ -99,7 +99,7 @@ async def response_factory(app, handler):
                 resp = web.Response(body=app['__templating__'].get_template(template).render(**r).encode('utf-8'))
                 resp.content_type = 'text/html;charset=utf-8'
                 return resp
-        if isinstance(r, int) and 100 <= r <600:
+        if isinstance(r, int) and 100 <= r < 600:
             return web.Response(r)
         if isinstance(r, tuple) and len(r) == 2:
             t, m = r
@@ -126,12 +126,18 @@ def datetime_filter(t):
     return u'%s年%s月%s日' % (dt.year, dt.month, dt.day)
 
 
-def index(request):
-    return web.Response()
-
-
 async def init(loop):
-    app = web.Application(loop=loop)
-    app.router.add_route('GET', '/', index)
+    await orm.create_pool(loop=loop, **configs.db)
+    app = web.Application(loop=loop, middlewares=[logger_factory, auth_factory, response_factory])
+    init_jinja2(app, filters=dict(datetime=datetime_filter))
+    add_routes(app, 'handlers')
+    add_static(app)
     srv = await loop.create_server(app.make_handler(), '127.0.0.1', 9000)
     logging.info('server started at http://127.0.0.1:9000')
+    return srv
+
+
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(init(loop))
+    loop.run_forever()
