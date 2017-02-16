@@ -9,9 +9,9 @@ configs = {
         'port': 3306,
         'user': 'root',
         'password': '123456',
-        'db': 'douyu'
+        'db': 'awesome'
     },
     'session': {
-        'secret': 'douyudanmu'
+        'secret': 'Awesome'
     }
 }
