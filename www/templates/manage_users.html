@@ -12,12 +12,24 @@ function initVM(data) {
         data: {
             users: data.users,
             page: data.page
+        },
+        methods: {
+            delete_user: function (user) {
+                if (confirm('确认要删除用户“' + user.name + '”？删除后不可恢复！')) {
+                    postJSON('/api/users/' + user.id + '/delete', function (err, r) {
+                        if (err) {
+                            return error(err);
+                        }
+                        refresh();
+                    });
+                }
+            }
         }
     });
 }
 $(function() {
     getJSON('/api/users', {
-        page: {{ page_index }}
+        page: {{ page.page_index }}
     }, function (err, results) {
         if (err) {
             return fatal(err);
@@ -53,27 +65,32 @@ $(function() {
         <table class="uk-table uk-table-hover">
             <thead>
                 <tr>
-                    <th class="uk-width-4-10">名字</th>
-                    <th class="uk-width-4-10">电子邮件</th>
+                    <th class="uk-width-2-10">名字</th>
+                    <th class="uk-width-5-10">电子邮件</th>
                     <th class="uk-width-2-10">注册时间</th>
+                    <th class="uk-width-1-10">操作</th>
                 </tr>
             </thead>
             <tbody>
-                <tr v-repeat="user: users" >
+                <tr v-for="user in users" >
                     <td>
                         <span v-text="user.name"></span>
                         <span v-if="user.admin" style="color:#d05"><i class="uk-icon-key"></i> 管理员</span>
                     </td>
                     <td>
-                        <a v-attr="href: 'mailto:'+user.email" v-text="user.email"></a>
+                        <a v-bind:href="'mailto:'+user.email" v-text="user.email"></a>
                     </td>
                     <td>
                         <span v-text="user.created_at.toDateTime()"></span>
                     </td>
+                    <td>
+                        <a href="#0" v-on:click="delete_user(user)"><i class="uk-icon-trash-o"></i></a>
+                    </td>
                 </tr>
             </tbody>
         </table>
-        <div v-component="pagination" v-with="page"></div>
+        <!--<div v-component="pagination" v-with="page"></div>-->
+        {{ pagination('/manage/users?page=', page) }}
     </div>
 
 {% endblock %}

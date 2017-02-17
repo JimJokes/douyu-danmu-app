@@ -85,7 +85,7 @@ async def cookie2user(cookie_str):
 async def index(*, page='1'):
     page_index = get_page_index(page)
     num = await Blog.findNumber('count(id)')
-    page = Page(num)
+    page = Page(num, page_index=page_index)
     if num == 0:
         blogs = []
     else:
@@ -163,19 +163,43 @@ def manage():
 
 
 @get('/manage/comments')
-def manage_comments(*, page='1'):
+async def manage_comments(*, page='1'):
+    page_index = get_page_index(page)
+    num = await Comment.findNumber('count(id)')
+    page = Page(num, page_index=page_index)
+    if num == 0:
+        comments = []
+    else:
+        comments = await Comment.findAll(orderBy='created_at desc', limit=(page.offset, page.limit))
     return {
         '__template__': 'manage_comments.html',
-        'page_index': get_page_index(page)
+        'page': page,
+        'comments': comments
     }
+    # return {
+    #     '__template__': 'manage_comments.html',
+    #     'page_index': get_page_index(page)
+    # }
 
 
 @get('/manage/blogs')
-def manage_blogs(*, page='1'):
+async def manage_blogs(*, page='1'):
+    page_index = get_page_index(page)
+    num = await Blog.findNumber('count(id)')
+    page = Page(num, page_index=page_index)
+    if num == 0:
+        blogs = []
+    else:
+        blogs = await Blog.findAll(orderBy='created_at desc', limit=(page.offset, page.limit))
     return {
         '__template__': 'manage_blogs.html',
-        'page_index': get_page_index(page)
+        'page': page,
+        'blogs': blogs
     }
+    # return {
+    #     '__template__': 'manage_blogs.html',
+    #     'page_index': get_page_index(page)
+    # }
 
 
 @get('/manage/blogs/create')
@@ -197,11 +221,23 @@ def manage_edit_blog(*, id):
 
 
 @get('/manage/users')
-def manage_users(*, page='1'):
+async def manage_users(*, page='1'):
+    page_index = get_page_index(page)
+    num = await User.findNumber('count(id)')
+    page = Page(num, page_index=page_index)
+    if num == 0:
+        users = []
+    else:
+        users = await User.findAll(orderBy='created_at desc', limit=(page.offset, page.limit))
     return {
         '__template__': 'manage_users.html',
-        'page_index': get_page_index(page)
+        'page': page,
+        'users': users
     }
+    # return {
+    #     '__template__': 'manage_users.html',
+    #     'page_index': get_page_index(page)
+    # }
 
 
 @get('/api/comments')
@@ -294,7 +330,7 @@ async def api_get_blog(*, id):
     return blog
 
 
-@post('/api/blogs')
+@post('/manage/blogs/api/blogs')
 async def api_create_blog(request, *, name, summary, content):
     check_admin(request)
     if not name or not name.strip():
@@ -308,7 +344,7 @@ async def api_create_blog(request, *, name, summary, content):
     return blog
 
 
-@post('/api/blogs/{id}')
+@post('/manage/blogs/api/blogs/{id}')
 async def api_update_blog(id, request, *, name, summary, content):
     check_admin(request)
     blog = await Blog.find(id)
@@ -331,3 +367,16 @@ async def api_delete_blog(request, *, id):
     blog = await Blog.find(id)
     await blog.remove()
     return dict(id=id)
+
+
+@post('/api/users/{id}/delete')
+async def api_delete_user(request, *, id):
+    check_admin(request)
+    user = await User.find(id)
+    await user.remove()
+    return dict(id=id)
+
+
+@get('manage/{table}')
+async def manage_table(*, page='1'):
+    pass

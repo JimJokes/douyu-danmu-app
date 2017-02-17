@@ -1,0 +1,17 @@
+{% extends __base__.html %}
+
+{% block title %}管理{% endblock %}
+
+{% block beforehead %}
+
+<script src="/static/js/manage.js"></script>
+
+{% endblock %}
+{% block content %}
+<div class="uk-width-1-1 uk-margin-bottom">
+    <div class="uk-panel uk-panel-box">
+        <ul class="uk-breadcrumb">
+            <li :class="'{{table}}===key ? 'uk-active' : ''" v-for="key of models"><a :href=""></a></li>
+        </ul>
+    </div>
+</div>
