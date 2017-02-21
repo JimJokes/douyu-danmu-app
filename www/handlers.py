@@ -157,9 +157,9 @@ def signout(request):
     return r
 
 
-@get('/manage/')
+@get('/manage/2.0/')
 def manage():
-    return 'redirect:/manage/comments'
+    return 'redirect:/manage/2.0/comments'
 
 
 @get('/manage/comments')
@@ -211,7 +211,7 @@ def manage_create_blog():
     }
 
 
-@get('/manage/blogs/edit')
+@get('/blogs/edit')
 def manage_edit_blog(*, id):
     return {
         '__template__': 'manage_blog_edit.html',
@@ -377,6 +377,40 @@ async def api_delete_user(request, *, id):
     return dict(id=id)
 
 
-@get('manage/{table}')
-async def manage_table(*, page='1'):
-    pass
+@get('/manage/2.0/{table}')
+async def manage_table(table, *, page='1'):
+    page_index = get_page_index(page)
+    modules = {'users': User, 'blogs': Blog, 'comments': Comment}
+    num = await modules[table].findNumber('count(id)')
+    page = Page(num, page_index=page_index)
+    if num == 0:
+        items = []
+    else:
+        items = await modules[table].findAll(orderBy='created_at desc', limit=(page.offset, page.limit))
+    return {
+        '__template__': 'manage.html',
+        'page': page,
+        'items': items
+    }
+
+
+@post('/api/2.0/{table}/{id}/delete')
+async def api_delete_item(request, *, table, id):
+    check_admin(request)
+    modules = {'users': User, 'blogs': Blog, 'comments': Comment}
+    item = await modules[table].find(id)
+    await item.remove()
+    return dict(id=id)
+
+
+@get('/api/2.0/{table}')
+async def api_table(table, *, page='1'):
+    modules = {'users': User, 'blogs': Blog, 'comments': Comment}
+    page_index = get_page_index(page)
+    num = await modules[table].findNumber('count(id)')
+    page = Page(num, page_index=page_index)
+    if num == 0:
+        return dict(page=page, items=())
+    else:
+        items = await modules[table].findAll(orderBy='created_at desc', limit=(page.offset, page.limit))
+        return dict(page=page, items=items)
