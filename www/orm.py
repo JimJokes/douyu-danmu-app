@@ -3,7 +3,7 @@ import aiomysql
 
 
 def log(sql, args=()):
-    logging.info('SQL: %s' % sql)
+    logging.info('SQL: %s %s' % (sql, args))
 
 
 async def create_pool(loop, **kw):
@@ -28,7 +28,7 @@ async def select(sql, args, size=None):
     global __pool
     with await __pool as conn:
         cur = await conn.cursor(aiomysql.DictCursor)
-        await cur.execute(sql.replace('?', '%s'), args or ())
+        await cur.execute(sql.replace('?', '%s'), args)
         if size:
             rs = await cur.fetchmany(size)
         else:
@@ -55,13 +55,6 @@ async def execute(sql, args, autocommit=True):
                 await conn.rollback()
             raise
         return affected
-
-
-def create_args_string(num):
-    L = []
-    for n in range(num):
-        L.append('?')
-    return ','.join(L)
 
 
 class Field(object):
@@ -104,10 +97,10 @@ class ModelMetaclass(type):
     def __new__(cls, name, bases, attrs):
         if name == 'Model':
             return type.__new__(cls, name, bases, attrs)
-        tableName = attrs.get('__table__', None) or name
+        tableName = attrs.get('__table__', name)
         logging.info('found model: %s (table: %s)' % (name, tableName))
         mappings = dict()
-        fields = []
+        escaped_fields = []
         primaryKey = None
         for k, v in attrs.items():
             if isinstance(v, Field):
@@ -118,19 +111,18 @@ class ModelMetaclass(type):
                         raise BaseException('Duplicate primary key for field: %s' % k)
                     primaryKey = k
                 else:
-                    fields.append(k)
+                    escaped_fields.append(k)
         if not primaryKey:
             raise BaseException('Primary key not found.')
         for k in mappings.keys():
             attrs.pop(k)
-        escaped_fields = list(map(lambda f: '`%s`' % f, fields))
         attrs['__mappings__'] = mappings
         attrs['__table__'] = tableName
         attrs['__primary_key__'] = primaryKey
-        attrs['__fields__'] = fields
-        attrs['__select__'] = 'select `%s`, %s from `%s`' % (primaryKey, ', '.join(escaped_fields), tableName)
-        attrs['__insert__'] = 'insert into `%s` (%s, `%s`) values (%s)' % (tableName, ', '.join(escaped_fields), primaryKey, create_args_string(len(escaped_fields) + 1))
-        attrs['__update__'] = 'update `%s` set %s where `%s`=?' % (tableName, ', '.join(map(lambda f: '`%s`=?' % (mappings.get(f).name or f), fields)), primaryKey)
+        attrs['__fields__'] = escaped_fields + [primaryKey]
+        attrs['__select__'] = 'select * from `%s`' % tableName
+        attrs['__insert__'] = 'insert into `%s` (%s) values (%s)' % (tableName, ', '.join('`%s`' % f for f in mappings), ','.join('?' * len(mappings)))
+        attrs['__update__'] = 'update `%s` set %s where `%s`=?' % (tableName, ', '.join('`%s`=?' % f for f in escaped_fields), primaryKey)
         attrs['__delete__'] = 'delete from `%s` where `%s`=?' % (tableName, primaryKey)
         return type.__new__(cls, name, bases, attrs)
 
@@ -182,7 +174,7 @@ class Model(dict, metaclass=ModelMetaclass):
                 args.append(limit)
             elif isinstance(limit, tuple) and len(limit) == 2:
                 sql.append('?, ?')
-                args.append(limit)
+                args.extend(limit)
             else:
                 raise ValueError('Invalid limit values: %s' % str(limit))
         rs = await select(' '.join(sql), args)
@@ -208,23 +200,22 @@ class Model(dict, metaclass=ModelMetaclass):
             return None
         return cls(**rs[0])
 
-    @classmethod
+    # @classmethod
     async def save(cls):
-        args = list(map(cls.getValueOrDefault, cls.__fields__))
-        args.append(cls.getValueOrDefault(cls.__primary_key__))
+        args = list(map(cls.getValueOrDefault, cls.__mappings__))
+        logging.info(args)
         rows = await execute(cls.__insert__, args)
         if rows != 1:
             logging.warning('failed to insert record: affected rows: %s' % rows)
 
-    @classmethod
+    # @classmethod
     async def update(cls):
         args = list(map(cls.getValue, cls.__fields__))
-        args.append(cls.getValue(cls.__primary_key__))
         rows = await execute(cls.__update__, args)
         if rows != 1:
             logging.warning('failed to update by primary key: affected rows: %s' % rows)
 
-    @classmethod
+    # @classmethod
     async def remove(cls):
         args = [cls.getValue(cls.__primary_key__)]
         rows = await execute(cls.__delete__, args)
