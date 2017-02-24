@@ -55,7 +55,7 @@ $(function(){
 {% endblock %}
 
 {% block content %}
-<div id="exp">
+<div id="exp">  
     <div class="uk-width-1-1 uk-margin-bottom">
         <div class="uk-panel uk-panel-box">
             <ul class="uk-breadcrumb">
@@ -103,7 +103,7 @@ $(function(){
                     <a v-if="page.has_previous" :href="'/manage/2.0/'+table+'?page='+(page.page_index-1)"><i class="uk-icon-angle-double-left"></i></a>
                     <span v-else><i class="uk-icon-angle-double-left"></i></span>
                 </li>
-                <!-- 第一页 -->
+                <!-- 当前页 -->
                 <li class="uk-active">
                     <span v-text="page.page_index"></span>
                 </li>
