@@ -157,49 +157,9 @@ def signout(request):
     return r
 
 
-@get('/manage/2.0/')
+@get('/manage/')
 def manage():
-    return 'redirect:/manage/2.0/comments'
-
-
-@get('/manage/comments')
-async def manage_comments(*, page='1'):
-    page_index = get_page_index(page)
-    num = await Comment.findNumber('count(id)')
-    page = Page(num, page_index=page_index)
-    if num == 0:
-        comments = []
-    else:
-        comments = await Comment.findAll(orderBy='created_at desc', limit=(page.offset, page.limit))
-    return {
-        '__template__': 'manage_comments.html',
-        'page': page,
-        'comments': comments
-    }
-    # return {
-    #     '__template__': 'manage_comments.html',
-    #     'page_index': get_page_index(page)
-    # }
-
-
-@get('/manage/blogs')
-async def manage_blogs(*, page='1'):
-    page_index = get_page_index(page)
-    num = await Blog.findNumber('count(id)')
-    page = Page(num, page_index=page_index)
-    if num == 0:
-        blogs = []
-    else:
-        blogs = await Blog.findAll(orderBy='created_at desc', limit=(page.offset, page.limit))
-    return {
-        '__template__': 'manage_blogs.html',
-        'page': page,
-        'blogs': blogs
-    }
-    # return {
-    #     '__template__': 'manage_blogs.html',
-    #     'page_index': get_page_index(page)
-    # }
+    return 'redirect:/manage/comments'
 
 
 @get('/manage/blogs/create')
@@ -207,7 +167,7 @@ def manage_create_blog():
     return {
         '__template__': 'manage_blog_edit.html',
         'id': '',
-        'action': 'api/blogs'
+        'action': '/api/blog/create'
     }
 
 
@@ -218,37 +178,6 @@ def manage_edit_blog(*, id):
         'id': id,
         'action': 'api/blogs/%s' % id
     }
-
-
-@get('/manage/users')
-async def manage_users(*, page='1'):
-    page_index = get_page_index(page)
-    num = await User.findNumber('count(id)')
-    page = Page(num, page_index=page_index)
-    if num == 0:
-        users = []
-    else:
-        users = await User.findAll(orderBy='created_at desc', limit=(page.offset, page.limit))
-    return {
-        '__template__': 'manage_users.html',
-        'page': page,
-        'users': users
-    }
-    # return {
-    #     '__template__': 'manage_users.html',
-    #     'page_index': get_page_index(page)
-    # }
-
-
-@get('/api/comments')
-async def api_comments(*, page='1'):
-    page_index = get_page_index(page)
-    num = await Comment.findNumber('count(id)')
-    p = Page(num, page_index)
-    if num == 0:
-        return dict(page=p, comments=())
-    comments = await Comment.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
-    return dict(page=p, comments=comments)
 
 
 @post('/api/blogs/{id}/comments')
@@ -264,29 +193,6 @@ async def api_create_comment(id, request, *, content):
     comment = Comment(blog_id=blog.id, user_id=user.id, user_name=user.name, user_image=user.image, content=content.strip())
     await comment.save()
     return comment
-
-
-@post('/api/comments/{id}/delete')
-async def api_delete_comments(id, request):
-    check_admin(request)
-    c = await Comment.find(id)
-    if c is None:
-        raise APIResourceNotFoundError('Comment')
-    await c.remove()
-    return dict(id=id)
-
-
-@get('/api/users')
-async def api_get_users(*, page='1'):
-    page_index = get_page_index(page)
-    num = await User.findNumber('count(id)')
-    p = Page(num, page_index)
-    if num == 0:
-        return dict(page=p, users=())
-    users = await User.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
-    for u in users:
-        u.passwd = '******'
-    return dict(page=p, users=users)
 
 
 @post('/api/users')
@@ -313,24 +219,13 @@ async def api_register_user(*, email, name, passwd):
     return r
 
 
-@get('/api/blogs')
-async def api_blogs(*, page='1'):
-    page_index = get_page_index(page)
-    num = await Blog.findNumber('count(id)')
-    p = Page(num, page_index)
-    if num == 0:
-        return dict(page=p, blogs=())
-    blogs = await Blog.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
-    return dict(page=p, blogs=blogs)
-
-
 @get('/api/blogs/{id}')
 async def api_get_blog(*, id):
     blog = await Blog.find(id)
     return blog
 
 
-@post('/manage/blogs/api/blogs')
+@post('/api/blog/create')
 async def api_create_blog(request, *, name, summary, content):
     check_admin(request)
     if not name or not name.strip():
@@ -344,7 +239,7 @@ async def api_create_blog(request, *, name, summary, content):
     return blog
 
 
-@post('/manage/blogs/api/blogs/{id}')
+@post('/api/blogs/{id}')
 async def api_update_blog(id, request, *, name, summary, content):
     check_admin(request)
     blog = await Blog.find(id)
@@ -361,23 +256,7 @@ async def api_update_blog(id, request, *, name, summary, content):
     return blog
 
 
-@post('/api/blogs/{id}/delete')
-async def api_delete_blog(request, *, id):
-    check_admin(request)
-    blog = await Blog.find(id)
-    await blog.remove()
-    return dict(id=id)
-
-
-@post('/api/users/{id}/delete')
-async def api_delete_user(request, *, id):
-    check_admin(request)
-    user = await User.find(id)
-    await user.remove()
-    return dict(id=id)
-
-
-@get('/manage/2.0/{table}')
+@get('/manage/{table}')
 async def manage_table(table, *, page='1'):
     page_index = get_page_index(page)
     modules = {'users': User, 'blogs': Blog, 'comments': Comment}
@@ -394,7 +273,7 @@ async def manage_table(table, *, page='1'):
     }
 
 
-@post('/api/2.0/{table}/{id}/delete')
+@post('/api/{table}/{id}/delete')
 async def api_delete_item(request, *, table, id):
     check_admin(request)
     modules = {'users': User, 'blogs': Blog, 'comments': Comment}
@@ -403,7 +282,7 @@ async def api_delete_item(request, *, table, id):
     return dict(id=id)
 
 
-@get('/api/2.0/{table}')
+@get('/api/{table}')
 async def api_table(table, *, page='1'):
     modules = {'users': User, 'blogs': Blog, 'comments': Comment}
     page_index = get_page_index(page)
@@ -413,4 +292,7 @@ async def api_table(table, *, page='1'):
         return dict(page=page, items=())
     else:
         items = await modules[table].findAll(orderBy='created_at desc', limit=(page.offset, page.limit))
+        if table == 'users':
+            for item in items:
+                item.passwd = '******'
         return dict(page=page, items=items)

@@ -148,7 +148,7 @@ function toSmartDate(timestamp) {
     var
         today = new Date(g_time),
         now = today.getTime(),
-        s = '1·ÖÖÓÇ°?',
+        s = '1åˆ†é’Ÿå‰Â',
         t = now - timestamp;
     if (t > 604800000) {
         // 1 week ago:
@@ -159,19 +159,19 @@ function toSmartDate(timestamp) {
             d = that.getDate(),
             hh = that.getHours(),
             mm = that.getMinutes();
-        s = y===today.getFullYear() ? '' : y + 'Äê';
-        s = s + m + 'ÔÂ' + d + 'ÈÕ' + hh + ':' + (mm < 10 ? '0' : '') + mm;
+        s = y===today.getFullYear() ? '' : y + 'å¹´';
+        s = s + m + 'æœˆ' + d + 'æ—¥' + hh + ':' + (mm < 10 ? '0' : '') + mm;
     }
     else if (t >= 86400000) {
         // 1-6 days ago:
-        s = Math.floor(t / 86400000) + 'ÌìÇ°';
+        s = Math.floor(t / 86400000) + 'å¤©å‰';
     }
     else if (t >= 3600000) {
         // 1-23 hours ago:
-        s = Math.floor(t / 3600000) + 'Ğ¡Ê±Ç°';
+        s = Math.floor(t / 3600000) + 'å°æ—¶å‰';
     }
     else if (t >= 60000) {
-        s = Math.floor(t / 60000) + '·ÖÖÓÇ°';
+        s = Math.floor(t / 60000) + 'åˆ†é’Ÿå‰';
     }
     return s;
 }
@@ -320,7 +320,7 @@ function _httpJSON(method, url, data, callback) {
         }
         return callback(null, r);
     }).fail(function (jqXHR, textStatus) {
-        return callback({'error': 'http_bad_response', 'data': '' + jqXHR.status, 'message': 'ÍøÂçºÃÏñ³öÎÊÌâÁË (HTTP ' + jqXHR.status + ')'});
+        return callback({'error': 'http_bad_response', 'data': '' + jqXHR.status, 'message': 'ç½‘ç»œå¥½åƒå‡ºé—®é¢˜äº† (HTTP ' + jqXHR.status + ')'});
     });
 }
 

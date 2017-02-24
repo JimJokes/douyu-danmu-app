@@ -17,6 +17,11 @@ function initVM(data) {
                 'users': {'name': '名字', 'email': '邮箱'},
                 'blogs': {'name': '标题', 'user_name': '作者'},
                 'comments': {'user_name': '作者', 'content': '内容'},
+            },
+            name: {
+                'users': '用户',
+                'blogs': '日志',
+                'comments': '评论',
             }
         },
         computed:{
@@ -27,7 +32,7 @@ function initVM(data) {
         methods: {
             delete_item: function (item) {
                 if(confirm('确定要删除“'+ (item.name || item.content) + '”？删除后不可恢复！')) {
-                    postJSON('/api/2.0/' + this.table + '/' + item.id + '/delete', function(err, r){
+                    postJSON('/api/' + this.table + '/' + item.id + '/delete', function(err, r){
                         if (err){
                             return error(err);
                         }
@@ -40,7 +45,7 @@ function initVM(data) {
 }
 $(function(){
     var table = location.pathname.split('/').pop();
-    getJSON('/api/2.0/'+table, {
+    getJSON('/api/'+table, {
         page: {{ page.page_index }}
     }, function (err, data) {
         if (err) {
@@ -59,7 +64,7 @@ $(function(){
     <div class="uk-width-1-1 uk-margin-bottom">
         <div class="uk-panel uk-panel-box">
             <ul class="uk-breadcrumb">
-                <li :class="table===key ? 'uk-active' : ''" v-for="(_, key) in models"><span v-show="table===key" v-text="key"></span><a v-show="table!==key" :href="table!==key ? '/manage/2.0/' + key : ''" v-text="key"></a></li>
+                <li :class="table===key ? 'uk-active' : ''" v-for="(_, key) in models"><span v-show="table===key" v-text="name[key]"></span><a v-show="table!==key" :href="table!==key ? '/manage/' + key : ''" v-text="name[key]"></a></li>
             </ul>
         </div>
     </div>
@@ -71,12 +76,13 @@ $(function(){
     </div>
 
     <div id="manage-table" class="uk-width-1-1">
+        <a v-show="table == 'blogs'" href="/manage/blogs/create" class="uk-button uk-button-primary"><i class="uk-icon-plus"></i> 新日志</a>
         <table class="uk-table uk-table-hover">
             <thead>
                 <tr>
-                    <th v-for="title in fields" v-text="title"></th>
+                    <th v-for="title in fields" v-text="title" class="uk-width-3-10"></th>
                     <th class="uk-width-2-10">创建时间</th>
-                    <th class="uk-width-1-10">操作</th>
+                    <th class="uk-width-2-10">操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -100,7 +106,7 @@ $(function(){
             <ul class="uk-pagination">
                 <!-- 上一页 -->
                 <li :class="page.has_previous ?'':'uk-disabled'">
-                    <a v-if="page.has_previous" :href="'/manage/2.0/'+table+'?page='+(page.page_index-1)"><i class="uk-icon-angle-double-left"></i></a>
+                    <a v-if="page.has_previous" :href="'/manage/'+table+'?page='+(page.page_index-1)"><i class="uk-icon-angle-double-left"></i></a>
                     <span v-else><i class="uk-icon-angle-double-left"></i></span>
                 </li>
                 <!-- 当前页 -->
@@ -109,7 +115,7 @@ $(function(){
                 </li>
                 <!-- 下一页 -->
                 <li :class="page.has_next ? '':'uk-disabled'">
-                    <a v-if="page.has_next" :href="'/manage/2.0/'+table+'?page='+(page.page_index+1)"><i class="uk-icon-angle-double-right"></i></a>
+                    <a v-if="page.has_next" :href="'/manage/'+table+'?page='+(page.page_index+1)"><i class="uk-icon-angle-double-right"></i></a>
                     <span v-else><i class="uk-icon-angle-double-right"></i></span>
                 </li>
             </ul>
