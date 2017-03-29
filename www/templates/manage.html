@@ -64,7 +64,7 @@ $(function(){
     <div class="uk-width-1-1 uk-margin-bottom">
         <div class="uk-panel uk-panel-box">
             <ul class="uk-breadcrumb">
-                <li :class="table===key ? 'uk-active' : ''" v-for="(_, key) in models"><span v-show="table===key" v-text="name[key]"></span><a v-show="table!==key" :href="table!==key ? '/manage/' + key : ''" v-text="name[key]"></a></li>
+                <li :class="table===key ? 'uk-active' : ''" v-for="(_, key) in models"><span v-show="table===key" v-text="name[key]"></span><a v-show="table!==key" :href="/manage/' + key" v-text="name[key]"></a></li>
             </ul>
         </div>
     </div>

@@ -37,6 +37,22 @@ def post(path):
     return decorator
 
 
+def delete(path):
+    '''
+    Define decorator @delete('/path')
+    :param path:
+    :return:
+    '''
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kw):
+            return func(*args, **kw)
+        wrapper.__method__ = 'DELETE'
+        wrapper.__route__ = path
+        return wrapper
+    return decorator
+
+
 def get_required_kw_args(fn):
     args = []
     params = inspect.signature(fn).parameters

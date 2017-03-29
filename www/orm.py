@@ -69,7 +69,7 @@ class Field(object):
 
 
 class StringField(Field):
-    def __init__(self, name=None, primary_key=False, default=None, ddl='varchar(100'):
+    def __init__(self, name=None, primary_key=False, default=None, ddl='varchar(100)'):
         super().__init__(name, ddl, primary_key, default)
 
 
@@ -200,7 +200,7 @@ class Model(dict, metaclass=ModelMetaclass):
             return None
         return cls(**rs[0])
 
-    # @classmethod
+    @classmethod
     async def save(cls):
         args = list(map(cls.getValueOrDefault, cls.__mappings__))
         logging.info(args)
@@ -221,3 +221,35 @@ class Model(dict, metaclass=ModelMetaclass):
         rows = await execute(cls.__delete__, args)
         if rows != 1:
             logging.warning('failed to remove by primary key: affected rows: %s' % rows)
+
+    @classmethod
+    async def findJoin(cls, join=None, on=None, where=None, args=None, **kw):
+        sql = [cls.__select__]
+        if join:
+            sql.append('inner join')
+            sql.append(join)
+        if on:
+            sql.append('on')
+            sql.append(on)
+        if where:
+            sql.append('where')
+            sql.append(where)
+        if args is None:
+            args = []
+        orderBy = kw.get('orderBy', None)
+        if orderBy:
+            sql.append('order by')
+            sql.append(orderBy)
+        limit = kw.get('limit', None)
+        if limit is not None:
+            sql.append('limit')
+            if isinstance(limit, int):
+                sql.append('?')
+                args.append(limit)
+            elif isinstance(limit, tuple) and len(limit) == 2:
+                sql.append('?, ?')
+                args.extend(limit)
+            else:
+                raise ValueError('Invalid limit values: %s' % str(limit))
+        rs = await select(' '.join(sql), args)
+        return rs
